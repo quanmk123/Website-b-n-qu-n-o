@@ -274,6 +274,109 @@
             </div><!-- /.position-relative -->
 
         </section><!-- /.products-carousel container -->
+
+        {{-- ===== RECENTLY VIEWED PRODUCTS ===== --}}
+        @if ($recentlyViewed->isNotEmpty())
+        <section class="products-carousel container" id="recently-viewed-section">
+            <h2 class="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">Sản phẩm đã xem <strong>gần đây</strong></h2>
+
+            <div id="recently_viewed_products" class="position-relative">
+                <div class="swiper-container js-swiper-slider"
+                    data-settings='{
+                        "autoplay": false,
+                        "slidesPerView": 4,
+                        "slidesPerGroup": 4,
+                        "effect": "none",
+                        "loop": false,
+                        "pagination": {
+                            "el": "#recently_viewed_products .products-pagination",
+                            "type": "bullets",
+                            "clickable": true
+                        },
+                        "navigation": {
+                            "nextEl": "#recently_viewed_products .products-carousel__next",
+                            "prevEl": "#recently_viewed_products .products-carousel__prev"
+                        },
+                        "breakpoints": {
+                            "320": { "slidesPerView": 2, "slidesPerGroup": 2, "spaceBetween": 14 },
+                            "768": { "slidesPerView": 3, "slidesPerGroup": 3, "spaceBetween": 24 },
+                            "992": { "slidesPerView": 4, "slidesPerGroup": 4, "spaceBetween": 30 }
+                        }
+                    }'>
+                    <div class="swiper-wrapper">
+                        @foreach ($recentlyViewed as $rv)
+                            <div class="swiper-slide product-card">
+                                <div class="pc__img-wrapper">
+                                    <a href="{{ route('product.detail', ['slug' => $rv->slug]) }}">
+                                        <img loading="lazy"
+                                             src="{{ check_image_url($rv->main_image) }}"
+                                             width="330" height="400"
+                                             alt="{{ $rv->ten }}"
+                                             class="pc__img">
+                                        <img loading="lazy"
+                                             src="{{ check_image_url($rv->main_image) }}"
+                                             width="330" height="400"
+                                             alt="{{ $rv->ten }}"
+                                             class="pc__img pc__img-second">
+                                    </a>
+                                </div>
+
+                                <div class="pc__info position-relative">
+                                    <p class="pc__category">{{ $rv->danh_muc->ten }}</p>
+                                    <h6 class="pc__title text-truncate">
+                                        <a href="{{ route('product.detail', ['slug' => $rv->slug]) }}">{{ $rv->ten }}</a>
+                                    </h6>
+                                    <div class="product-card__price d-flex">
+                                        @if ($rv->gia_giam)
+                                            <span class="price me-1 pc__category text-decoration-line-through">{{ number_format($rv->gia, 0, ',', '.') }}đ</span>
+                                            <span class="money price text-red">{{ number_format($rv->gia_giam, 0, ',', '.') }}đ</span>
+                                        @else
+                                            <span class="money price text-red">{{ number_format($rv->gia, 0, ',', '.') }}đ</span>
+                                        @endif
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <form action="{{ route('cart.add') }}" method="post">
+                                            @csrf
+                                            <input type="hidden" name="quantity" value="1">
+                                            <input type="hidden" name="product_id" value="{{ $rv->id }}">
+                                            <button type="submit" class="btn btn-primary w-100 py-2 fs-6">Thêm vào giỏ</button>
+                                        </form>
+                                    </div>
+
+                                    <form action="{{ route('wishlist.add') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="id" value="{{ $rv->id }}">
+                                        <button type="submit"
+                                                class="pc__btn-wl position-absolute top-0 end-0 bg-transparent border-0 js-add-wishlist"
+                                                title="Thêm vào yêu thích">
+                                            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <use href="#icon_heart" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div><!-- /.swiper-wrapper -->
+                </div><!-- /.swiper-container -->
+
+                <div class="products-carousel__prev position-absolute top-50 d-flex align-items-center justify-content-center">
+                    <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+                        <use href="#icon_prev_md" />
+                    </svg>
+                </div>
+                <div class="products-carousel__next position-absolute top-50 d-flex align-items-center justify-content-center">
+                    <svg width="25" height="25" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
+                        <use href="#icon_next_md" />
+                    </svg>
+                </div>
+
+                <div class="products-pagination mt-4 mb-5 d-flex align-items-center justify-content-center"></div>
+            </div><!-- /.position-relative -->
+        </section><!-- /#recently-viewed-section -->
+        @endif
+
     </main>
 @endsection
 

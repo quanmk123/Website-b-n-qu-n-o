@@ -90,21 +90,52 @@ class ShopController extends Controller
         return view('user.products.home', compact('danhMucs', 'sanPhams', 'sort', 'totalProducts'));
     }
 
-    // Chi tiết sản phẩm (có sản phẩm liên quan)
+    // Chi tiết sản phẩm (có sản phẩm liên quan + recently viewed)
     public function product_detail($slug)
     {
         $sanPham = SanPham::with('danh_muc')->where('slug', $slug)->first();
-        
+
         if (!$sanPham) {
             abort(404, 'Sản phẩm không tồn tại');
         }
-        
-        // Lấy sản phẩm liên quan (cùng danh mục)
+
+        // --- Recently Viewed: cập nhật session ---
+        $viewed = session()->get('recently_viewed', []);
+
+        // Xóa ID nếu đã tồn tại (để đưa lên đầu)
+        $viewed = array_filter($viewed, fn($id) => $id !== $sanPham->id);
+
+        // Đưa sản phẩm hiện tại lên đầu mảng
+        array_unshift($viewed, $sanPham->id);
+
+        // Giới hạn tối đa 8 sản phẩm
+        $viewed = array_slice($viewed, 0, 8);
+
+        session()->put('recently_viewed', array_values($viewed));
+
+        // --- Lấy danh sách recently viewed để hiển thị (bỏ sản phẩm hiện tại) ---
+        $recentlyViewedIds = array_filter($viewed, fn($id) => $id !== $sanPham->id);
+
+        $recentlyViewed = collect(); // mặc định rỗng
+        if (!empty($recentlyViewedIds)) {
+            // Lấy từ DB, giữ đúng thứ tự đã xem bằng cách sort theo thứ tự trong mảng
+            $products = SanPham::with('danh_muc')
+                ->whereIn('id', $recentlyViewedIds)
+                ->get()
+                ->keyBy('id');
+
+            // Sắp xếp theo thứ tự session (xem gần nhất lên đầu)
+            $recentlyViewed = collect($recentlyViewedIds)
+                ->map(fn($id) => $products->get($id))
+                ->filter(); // loại bỏ null nếu sản phẩm đã bị xoá khỏi DB
+        }
+
+        // --- Sản phẩm liên quan (cùng danh mục) ---
         $relatedProducts = SanPham::with('danh_muc')
             ->where('danh_muc_id', $sanPham->danh_muc_id)
             ->where('slug', '!=', $slug)
             ->get();
-            
+
         // Nếu không đủ 4 sản phẩm, lấy thêm
         if ($relatedProducts->count() < 4) {
             $additionalProducts = SanPham::where('danh_muc_id', $sanPham->danh_muc_id)
@@ -117,9 +148,16 @@ class ShopController extends Controller
         }
 
         // Xử lý gallery images (string phân cách bằng dấu phẩy)
-        $galleryImages = !empty($sanPham->hinh_anh_chi_tiet) ? array_filter(explode(',', $sanPham->hinh_anh_chi_tiet)) : [];
+        $galleryImages = !empty($sanPham->hinh_anh_chi_tiet)
+            ? array_filter(explode(',', $sanPham->hinh_anh_chi_tiet))
+            : [];
 
-        return view('user.products.detail', compact('sanPham', 'galleryImages', 'relatedProducts'));
+        return view('user.products.detail', compact(
+            'sanPham',
+            'galleryImages',
+            'relatedProducts',
+            'recentlyViewed'
+        ));
     }
 
     public function store(Request $request)
