@@ -9,11 +9,11 @@ use Illuminate\Http\Request;
 
 /**
  * Controller hiển thị sản phẩm cho user
- * Chức năng: tìm kiếm, filter theo danh mục/giá, phân trang
+ * Chức năng: tìm kiếm, filter theo danh mục/giá, sắp xếp, phân trang
  */
 class ShopController extends Controller
 {
-    // Danh sách sản phẩm (có tìm kiếm, filter, phân trang)
+    // Danh sách sản phẩm (có tìm kiếm, filter, sắp xếp, phân trang)
     public function index(Request $request)
     {
         $query = SanPham::query();
@@ -48,16 +48,46 @@ class ShopController extends Controller
             $query->whereBetween('gia', [$request->min_price, $request->max_price]);
         }
 
+        // Sắp xếp sản phẩm theo tham số `sort`
+        $sort = $request->input('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->oldest('id');
+                break;
+            case 'name_asc':
+                $query->orderBy('ten', 'asc');
+                break;
+            case 'name_desc':
+                $query->orderBy('ten', 'desc');
+                break;
+            case 'price_asc':
+                // Ưu tiên gia_giam nếu có, không thì dùng gia
+                $query->orderByRaw('COALESCE(gia_giam, gia) ASC');
+                break;
+            case 'price_desc':
+                $query->orderByRaw('COALESCE(gia_giam, gia) DESC');
+                break;
+            case 'discount_desc':
+                // Sắp xếp theo % giảm giá nhiều nhất (có gia_giam lên trước)
+                $query->orderByRaw('(gia - COALESCE(gia_giam, gia)) DESC');
+                break;
+            case 'newest':
+            default:
+                $query->latest('id');
+                break;
+        }
+
         $danhMucs = DanhMuc::all();
         $currentPage = $request->input('page', 1);
-        $sanPhams = $query->latest('id')->paginate(8)->appends($request->except('page'));
-        
+        $totalProducts = $query->count();
+        $sanPhams = $query->paginate(8)->appends($request->except('page'));
+
         // Redirect về trang 1 nếu page vượt quá số trang
         if ($currentPage > $sanPhams->lastPage() && $sanPhams->lastPage() > 0) {
             return redirect()->route('shop.index', array_merge($request->except('page'), ['page' => 1]));
         }
 
-        return view('user.products.home', compact('danhMucs', 'sanPhams'));
+        return view('user.products.home', compact('danhMucs', 'sanPhams', 'sort', 'totalProducts'));
     }
 
     // Chi tiết sản phẩm (có sản phẩm liên quan)

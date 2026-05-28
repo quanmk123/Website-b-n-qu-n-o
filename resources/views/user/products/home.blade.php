@@ -83,46 +83,63 @@
 
             <div class="shop-list flex-grow-1">
 
-                <div class="d-flex justify-content-between mb-4 pb-md-2">
+                {{-- Thanh thông tin: đếm sản phẩm + nút xóa bộ lọc --}}
+                @php
+                    $hasFilter = request()->hasAny(['q', 'danh_muc_id', 'category_group', 'min_price', 'max_price'])
+                                || (request('sort') && request('sort') !== 'newest');
+                @endphp
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    {{-- Breadcrumb --}}
                     <div class="breadcrumb mb-0 d-none d-md-block flex-grow-1">
-                        <a href="#" class="menu-link menu-link_us-s text-uppercase fw-medium">Trang chủ</a>
+                        <a href="{{ route('home.index') }}" class="menu-link menu-link_us-s text-uppercase fw-medium">Trang chủ</a>
                         <span class="breadcrumb-separator menu-link fw-medium ps-1 pe-1">/</span>
-                        <a href="#" class="menu-link menu-link_us-s text-uppercase fw-medium">Cửa hàng</a>
+                        <a href="{{ route('shop.index') }}" class="menu-link menu-link_us-s text-uppercase fw-medium">Cửa hàng</a>
                     </div>
 
-                    <div
-                        class="shop-acs d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-                        <select class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0"
-                            aria-label="Sort Items" name="total-number">
-                            <option selected>Sắp xếp mặc định</option>
-                            <option value="sale" {{ request('sort') == 'sale' ? 'selected' : '' }}>Giảm giá</option>
-                            <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Tên A-Z</option>
-                            <option value="name_desc" {{ request('sort') == 'name_desc' ? 'selected' : '' }}>Tên Z-A
-                            </option>
-                            <option value="price_asc"><a href="{{ request()->fullUrlWithQuery(['sort' => 'price_asc']) }}"
-                                    class="menu-link">Giá thấp đến cao</a></option>
-                            <option value="price_desc" {{ request('sort') == 'price_desc' ? 'selected' : '' }}>Giá cao đến thấp</option>
-                            <option value="date_asc" {{ request('sort') == 'date_asc' ? 'selected' : '' }}>Cũ nhất
-                            </option>
-                            <option value="date_desc" {{ request('sort') == 'date_desc' ? 'selected' : '' }}>Mới nhất
-                            </option>
+                    {{-- Thông tin số sản phẩm + nút xóa bộ lọc --}}
+                    <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                        <span class="text-secondary small">
+                            Tìm thấy <strong class="text-dark">{{ $totalProducts }}</strong> sản phẩm
+                        </span>
+                        @if ($hasFilter)
+                            <a href="{{ route('shop.index') }}" class="btn btn-outline-secondary btn-sm py-1 px-2" title="Xóa tất cả bộ lọc">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16" class="me-1">
+                                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                                </svg>
+                                Xóa bộ lọc
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mb-4 pb-md-2">
+                    <div class="shop-acs d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
+
+                        {{-- Dropdown sắp xếp --}}
+                        <select id="sort-select"
+                                class="shop-acs__select form-select w-auto border-0 py-0 order-1 order-md-0"
+                                aria-label="Sắp xếp sản phẩm">
+                            <option value="newest"       {{ $sort === 'newest'       ? 'selected' : '' }}>Mới nhất</option>
+                            <option value="oldest"       {{ $sort === 'oldest'       ? 'selected' : '' }}>Cũ nhất</option>
+                            <option value="name_asc"     {{ $sort === 'name_asc'     ? 'selected' : '' }}>Tên A-Z</option>
+                            <option value="name_desc"    {{ $sort === 'name_desc'    ? 'selected' : '' }}>Tên Z-A</option>
+                            <option value="price_asc"    {{ $sort === 'price_asc'    ? 'selected' : '' }}>Giá thấp đến cao</option>
+                            <option value="price_desc"   {{ $sort === 'price_desc'   ? 'selected' : '' }}>Giá cao đến thấp</option>
+                            <option value="discount_desc" {{ $sort === 'discount_desc' ? 'selected' : '' }}>Giảm giá nhiều nhất</option>
                         </select>
 
                         <div class="shop-asc__seprator mx-3 bg-light d-none d-md-block order-md-0"></div>
 
                         <div class="col-size align-items-center order-1 d-none d-lg-flex">
                             <span class="text-uppercase fw-medium me-2">Xem</span>
-                            <button class="btn-link fw-medium me-2 js-cols-size" data-target="products-grid"
-                                data-cols="2">2</button>
-                            <button class="btn-link fw-medium me-2 js-cols-size" data-target="products-grid"
-                                data-cols="3">3</button>
-                            <button class="btn-link fw-medium js-cols-size btn-link_active" data-target="products-grid"
-                                data-cols="4">4</button>
+                            <button class="btn-link fw-medium me-2 js-cols-size" data-target="products-grid" data-cols="2">2</button>
+                            <button class="btn-link fw-medium me-2 js-cols-size" data-target="products-grid" data-cols="3">3</button>
+                            <button class="btn-link fw-medium js-cols-size btn-link_active" data-target="products-grid" data-cols="4">4</button>
                         </div>
 
                         <div class="shop-filter d-flex align-items-center order-0 order-md-3 d-lg-none">
-                            <button class="btn-link btn-link_f d-flex align-items-center ps-0 js-open-aside"
-                                data-aside="shopFilter">
+                            <button class="btn-link btn-link_f d-flex align-items-center ps-0 js-open-aside" data-aside="shopFilter">
                                 <svg class="d-inline-block align-middle me-2" width="14" height="10"
                                     viewBox="0 0 14 10" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <use href="#icon_filter" />
@@ -134,7 +151,7 @@
                 </div>
 
                 <div class="products-grid row row-cols-2 row-cols-md-3" id="products-grid">
-                    @foreach ($sanPhams as $sp)
+                    @forelse ($sanPhams as $sp)
                         <div class="product-card-wrapper rounded">
                             <div class="product-card mb-3 mb-md-4 mb-xxl-5">
                                 <div class="pc__img-wrapper">
@@ -204,7 +221,17 @@
                                 </div>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        {{-- Thông báo khi không có sản phẩm --}}
+                        <div class="col-12 text-center py-5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#ccc" viewBox="0 0 16 16" class="mb-3">
+                                <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4M5 13a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                            </svg>
+                            <h5 class="text-muted mb-2">Không tìm thấy sản phẩm nào</h5>
+                            <p class="text-secondary mb-4">Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm.</p>
+                            <a href="{{ route('shop.index') }}" class="btn btn-primary px-4">Xem tất cả sản phẩm</a>
+                        </div>
+                    @endforelse
                 </div>
 
                 <nav class="shop-pages d-flex justify-content-between mt-3" aria-label="Page navigation">
@@ -271,12 +298,20 @@
             var range = $(".price-range-slider").val().split(',');
             var min = range[0];
             var max = range[1];
-            
+
             var url = new URL(window.location.href);
             url.searchParams.set('min_price', min);
             url.searchParams.set('max_price', max);
             url.searchParams.delete('page'); // Reset pagination
-            
+
+            window.location.href = url.toString();
+        });
+
+        // Xử lý thay đổi tùy chọn sắp xếp – giữ lại các bộ lọc hiện tại
+        $('#sort-select').on('change', function() {
+            var url = new URL(window.location.href);
+            url.searchParams.set('sort', $(this).val());
+            url.searchParams.delete('page'); // Reset về trang 1 khi đổi sort
             window.location.href = url.toString();
         });
     });
