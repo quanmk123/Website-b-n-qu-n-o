@@ -30,6 +30,7 @@ Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home.index');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/shop/{slug}', [ShopController::class, 'product_detail'])->name('product.detail');
+Route::get('/search-suggestions', [ShopController::class, 'searchSuggestions'])->name('search.suggestions');
 
 Route::get('/posts', [UserBaiVietController::class, 'index'])->name('post.index');
 Route::get('/post/{slug}', [UserBaiVietController::class, 'post_detail'])->name('post.detail');

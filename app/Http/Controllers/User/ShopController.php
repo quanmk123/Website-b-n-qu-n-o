@@ -160,6 +160,38 @@ class ShopController extends Controller
         ));
     }
 
+    /**
+     * Gợi ý tìm kiếm realtime (AJAX)
+     * Route: GET /search-suggestions?q=...
+     * Response: JSON array tối đa 5 sản phẩm
+     */
+    public function searchSuggestions(Request $request)
+    {
+        $keyword = trim($request->input('q', ''));
+
+        if (empty($keyword) || mb_strlen($keyword) < 1) {
+            return response()->json([]);
+        }
+
+        $sanPhams = SanPham::where('ten', 'like', "%{$keyword}%")
+            ->latest('id')
+            ->take(5)
+            ->get(['id', 'ten', 'slug', 'gia', 'gia_giam', 'main_image']);
+
+        $results = $sanPhams->map(function ($sp) {
+            return [
+                'ten'       => $sp->ten,
+                'slug'      => $sp->slug,
+                'gia'       => $sp->gia,
+                'gia_giam'  => $sp->gia_giam,
+                'hinh_anh'  => check_image_url($sp->main_image),
+                'url'       => route('product.detail', ['slug' => $sp->slug]),
+            ];
+        });
+
+        return response()->json($results);
+    }
+
     public function store(Request $request)
     {
         //
